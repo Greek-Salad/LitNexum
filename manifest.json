@@ -1,0 +1,17 @@
+{
+  "start_url": "./index.html",
+  "shortcuts": [
+    {
+      "name": "Библиотека",
+      "short_name": "Книги",
+      "description": "Перейти к списку книг",
+      "url": "./index.html"
+    },
+    {
+      "name": "От предвечной Тьмы к лунному Свету",
+      "short_name": "От предвечной Тьмы к лунному Свету",
+      "description": "Читать книгу «От предвечной Тьмы к лунному Свету»",
+      "url": "./book.html?book=mondschein&chapter=1"
+    }
+  ]
+}
