@@ -44,21 +44,22 @@ class BookLoader {
   async loadBookInfo() {
     const infoPath = `./books/${this.bookId}/info.json`;
     const response = await fetch(infoPath);
-    
+
     if (!response.ok) {
-        throw new Error(`Book info not found for ${this.bookId}`);
+      throw new Error(`Book info not found for ${this.bookId}`);
     }
-    
+
     this.bookInfo = await response.json();
-    
+
     this.bookInfo.ageRating = this.bookInfo.ageRating || 0;
-    this.bookInfo.showAgeGate = this.bookInfo.showAgeGate ?? (this.bookInfo.ageRating >= 18);
-    
+    this.bookInfo.showAgeGate =
+      this.bookInfo.showAgeGate ?? this.bookInfo.ageRating >= 18;
+
     document.title = `${this.bookInfo.title} — Читальный движок`;
     document.body.dataset.ageRating = this.bookInfo.ageRating;
-    
+
     return this.bookInfo;
-}
+  }
 
   async loadMediaRules() {
     const rulesPath = `./books/${this.bookId}/media-rules.json`;
@@ -99,14 +100,32 @@ class BookLoader {
 
   async scanChapters() {
     this.chapterFiles = [];
-    const maxChapters = this.bookInfo?.totalChapters || 200;
+
+    try {
+      const response = await fetch(`./books/${this.bookId}/chapters/00.html`, {
+        method: "HEAD",
+        cache: "no-cache",
+      });
+
+      if (response.ok) {
+        this.chapterFiles.push({
+          number: 0,
+          filename: "00.html",
+          exists: true,
+          isPreface: true,
+        });
+        console.log(`✅ Preface chapter (00) found`);
+      }
+    } catch (error) {
+      console.log(`ℹ️ No preface chapter`);
+    }
+
+    const maxChapters = this.bookInfo?.totalChapters || 99;
 
     for (let i = 1; i <= maxChapters; i++) {
       try {
         const padded = i.toString().padStart(2, "0");
         const url = `./books/${this.bookId}/chapters/${padded}.html`;
-
-        console.log(`Scanning chapter ${i}: ${url}`);
 
         const response = await fetch(url, {
           method: "HEAD",
@@ -118,17 +137,18 @@ class BookLoader {
             number: i,
             filename: `${padded}.html`,
             exists: true,
+            isPreface: false,
           });
           console.log(`✅ Chapter ${i} found`);
         } else {
-          console.log(`⏹️ Chapter ${i} not found, stopping scan`);
           break;
         }
       } catch (error) {
-        console.log(`⏹️ Error scanning chapter ${i}, stopping scan`);
         break;
       }
     }
+
+    this.chapterFiles.sort((a, b) => a.number - b.number);
 
     this.totalChapters = this.chapterFiles.length;
     console.log(`📚 Total chapters found: ${this.totalChapters}`);
@@ -157,32 +177,36 @@ class BookLoader {
           const html = await response.text();
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, "text/html");
-          const h2 = doc.querySelector("h2");
 
-          if (h2 && h2.textContent.trim()) {
-            this.chapterTitles[chapter.number] = h2.textContent.trim();
+          if (chapter.number === 0) {
+            const h1 = doc.querySelector("h1");
+            const h2 = doc.querySelector("h2");
+            this.chapterTitles[0] =
+              h1?.textContent?.trim() || h2?.textContent?.trim() || "От автора";
           } else {
-            this.chapterTitles[chapter.number] = `Глава ${chapter.number}`;
+            const h2 = doc.querySelector("h2");
+            if (h2 && h2.textContent.trim()) {
+              this.chapterTitles[chapter.number] = h2.textContent.trim();
+            } else {
+              this.chapterTitles[chapter.number] = `Глава ${chapter.number}`;
+            }
           }
         }
       } catch (error) {
-        this.chapterTitles[chapter.number] = `Глава ${chapter.number}`;
+        this.chapterTitles[chapter.number] =
+          chapter.number === 0 ? "От автора" : `Глава ${chapter.number}`;
       }
-    }
-
-    if (this.currentChapter === 1 && this.chapterTitles[1]) {
-      document.title = `${this.chapterTitles[1]} — ${this.bookInfo?.title || "Читальный движок"}`;
     }
   }
 
   async loadChapter(chapterNumber) {
     chapterNumber = parseInt(chapterNumber);
 
-    if (chapterNumber < 1 || chapterNumber > this.totalChapters) {
-      chapterNumber = Utils.clamp(chapterNumber, 1, this.totalChapters);
+    if (chapterNumber === 0) {
+      console.log(`📖 Loading preface chapter`);
+    } else {
+      console.log(`📖 Loading chapter ${chapterNumber} of ${this.bookId}`);
     }
-
-    console.log(`📖 Loading chapter ${chapterNumber} of ${this.bookId}`);
 
     try {
       const chapterInfo = this.chapterFiles.find(
@@ -190,6 +214,11 @@ class BookLoader {
       );
 
       if (!chapterInfo) {
+        console.log(`❌ Chapter ${chapterNumber} not found in chapterFiles`);
+        console.log(
+          "Available chapters:",
+          this.chapterFiles.map((c) => c.number),
+        );
         throw new Error(`Chapter ${chapterNumber} not found`);
       }
 
@@ -243,22 +272,29 @@ class BookLoader {
   }
 
   createErrorChapter(chapterNumber) {
+    const chapterDisplay =
+      chapterNumber === 0 ? "предисловия" : `главы ${chapterNumber}`;
+    const fileName =
+      chapterNumber === 0
+        ? "00.html"
+        : `${chapterNumber.toString().padStart(2, "0")}.html`;
+
     return `
-            <div class="error-chapter">
-                <h1 class="chapter-title">Ошибка загрузки главы ${chapterNumber}</h1>
-                <p class="chapter-meta">Файл books/${this.bookId}/chapters/${chapterNumber.toString().padStart(2, "0")}.html не найден</p>
-                <div class="error-content">
-                    <div class="error-actions">
-                        <button onclick="window.readingApp?.goToChapter(1)" class="error-btn">
-                            Перейти к главе 1
-                        </button>
-                        <button onclick="location.reload()" class="error-btn">
-                            Обновить страницу
-                        </button>
-                    </div>
+        <div class="error-chapter">
+            <h1 class="chapter-title">Ошибка загрузки ${chapterDisplay}</h1>
+            <p class="chapter-meta">Файл books/${this.bookId}/chapters/${fileName} не найден</p>
+            <div class="error-content">
+                <div class="error-actions">
+                    <button onclick="window.readingApp?.goToChapter(1)" class="error-btn">
+                        Перейти к главе 1
+                    </button>
+                    <button onclick="location.reload()" class="error-btn">
+                        Обновить страницу
+                    </button>
                 </div>
             </div>
-        `;
+        </div>
+    `;
   }
 
   createChapterNavigation() {
@@ -266,6 +302,28 @@ class BookLoader {
     if (!navElement) return;
 
     navElement.innerHTML = "";
+
+    const preface = this.chapterFiles.find((c) => c.number === 0);
+    if (preface) {
+      const isActive = 0 === this.currentChapter;
+      const item = document.createElement("a");
+      item.className = `chapter-item ${isActive ? "active" : ""}`;
+      item.href = "#";
+      item.dataset.chapter = 0;
+      item.innerHTML = `<span class="chapter-item-title">${this.chapterTitles[0] || "Предисловие"}</span>`;
+
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.readingApp?.goToChapter(0);
+
+        if (window.innerWidth < 768) {
+          document.getElementById("sidebar")?.classList.remove("open");
+          document.getElementById("overlay")?.classList.remove("visible");
+        }
+      });
+
+      navElement.appendChild(item);
+    }
 
     for (let i = 1; i <= this.totalChapters; i++) {
       const chapterInfo = this.chapterFiles.find((c) => c.number === i);
@@ -324,22 +382,17 @@ class BookLoader {
     const nextBtn = document.getElementById("next-chapter");
     const breadcrumb = document.getElementById("current-chapter-title");
 
-    const prevTitle =
-      this.currentChapter > 1
-        ? this.chapterTitles[this.currentChapter - 1] ||
-          `Глава ${this.currentChapter - 1}`
-        : null;
-
-    const nextTitle =
-      this.currentChapter < this.totalChapters
-        ? this.chapterTitles[this.currentChapter + 1] ||
-          `Глава ${this.currentChapter + 1}`
-        : null;
+    const hasPreface = this.chapterFiles.some((c) => c.number === 0);
 
     if (prevBtn) {
-      prevBtn.disabled = this.currentChapter <= 1;
+      prevBtn.disabled = this.currentChapter <= (hasPreface ? 0 : 1);
 
-      if (this.currentChapter > 1) {
+      if (this.currentChapter > (hasPreface ? 0 : 1)) {
+        const prevNumber = this.currentChapter - 1;
+        const prevTitle =
+          prevNumber === 0
+            ? "Предисловие"
+            : this.chapterTitles[prevNumber] || `Глава ${prevNumber}`;
         prevBtn.innerHTML = `
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/>
@@ -357,9 +410,12 @@ class BookLoader {
     }
 
     if (nextBtn) {
-      nextBtn.disabled = this.currentChapter >= this.totalChapters;
+      nextBtn.disabled = this.currentChapter >= this.totalChapters - 1;
 
-      if (this.currentChapter < this.totalChapters) {
+      if (this.currentChapter < this.totalChapters - 1) {
+        const nextNumber = this.currentChapter + 1;
+        const nextTitle =
+          this.chapterTitles[nextNumber] || `Глава ${nextNumber}`;
         nextBtn.innerHTML = `
                 ${nextTitle}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -377,7 +433,11 @@ class BookLoader {
     }
 
     if (breadcrumb) {
-      breadcrumb.textContent = `Глава ${this.currentChapter}`;
+      if (this.currentChapter === 0) {
+        breadcrumb.textContent = "Предисловие";
+      } else {
+        breadcrumb.textContent = `Глава ${this.currentChapter}`;
+      }
     }
 
     const navElement = document.getElementById("chapter-nav");

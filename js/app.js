@@ -23,6 +23,8 @@ class ReadingApp {
     this.hintInjector = null;
     this.audioManager = null;
     this.initializationPromise = null;
+    this.requestedChapter = 1;
+    this.initStarted = false;
   }
 
   async startBackgroundInitialization() {
@@ -66,11 +68,27 @@ class ReadingApp {
   }
 
   async init() {
+    if (this.initStarted) {
+      console.log("⚠️ init already started, skipping");
+      return;
+    }
+    this.initStarted = true;
+
     console.log("📍 Current URL:", window.location.href);
     console.log("📍 Pathname:", window.location.pathname);
-    const urlParams = new URLSearchParams(window.location.search);
 
+    const urlParams = new URLSearchParams(window.location.search);
     this.bookId = urlParams.get("book");
+
+    const chapterParam = urlParams.get("chapter");
+    this.requestedChapter =
+      chapterParam !== null ? parseInt(chapterParam) : null;
+
+    console.log("🔍 URL params:", {
+      book: this.bookId,
+      chapter: chapterParam,
+      parsed: this.requestedChapter,
+    });
 
     if (!this.bookId) {
       const pathParts = window.location.pathname.split("/");
@@ -86,13 +104,11 @@ class ReadingApp {
         pathname: window.location.pathname,
         hash: window.location.hash,
       });
+      this.bookId = "mondschein";
     }
 
-    const chapterParam = urlParams.get("chapter");
-    const startChapter = chapterParam ? parseInt(chapterParam) : 1;
-
     console.log(
-      `📚 Starting Reading App for book: ${this.bookId}, chapter: ${startChapter}`,
+      `📚 Starting Reading App for book: ${this.bookId}, chapter from URL: ${this.requestedChapter}`,
     );
 
     try {
@@ -111,46 +127,64 @@ class ReadingApp {
       this.ageRating = 0;
     }
 
-    if (this.needAgeGate) {
-      if (document.readyState !== "loading") {
-        this.showAgeGateModal(startChapter);
-      } else {
-        document.addEventListener("DOMContentLoaded", () => {
-          this.showAgeGateModal(startChapter);
-        });
-      }
-    } else {
-      this.continueInitialization(startChapter);
-    }
-  }
+    const ageConfirmed = Utils.loadFromStorage("ageGateConfirmed", false);
+    const ageTimestamp = Utils.loadFromStorage("ageGateConfirmedTimestamp", 0);
+    const now = Date.now();
+    const sessionValid = now - ageTimestamp < 24 * 60 * 60 * 1000;
 
-  showAgeGateModal() {
-    const modal = document.getElementById("age-gate-modal");
-    const acceptBtn = document.getElementById("age-gate-accept");
-    const declineBtn = document.getElementById("age-gate-decline");
-
-    if (!modal || !acceptBtn || !declineBtn) {
-      console.error("Age gate modal elements not found!");
-      this.continueInitialization();
+    if (this.needAgeGate && !(ageConfirmed && sessionValid)) {
+      alert(
+        "Для доступа к этой книге необходимо подтвердить возраст на главной странице",
+      );
+      window.location.href = "./index.html";
       return;
     }
 
-    acceptBtn.onclick = () => {
-      modal.style.display = "none";
-      this.continueInitialization();
-    };
-
-    declineBtn.onclick = () => {
-      window.close();
-      setTimeout(() => {
-        alert("Пожалуйста, закройте эту вкладку вручную.");
-      }, 100);
-    };
-
-    modal.style.display = "flex";
+    const startChapter =
+      this.requestedChapter !== null ? this.requestedChapter : 1;
+    this.continueInitialization(startChapter);
   }
 
-  async continueInitialization(startChapter = 1) {
+  resolveStartChapter(requestedChapter) {
+    console.log("🔍 resolveStartChapter called with:", requestedChapter);
+
+    requestedChapter = parseInt(requestedChapter);
+    console.log("🔍 after parseInt:", requestedChapter);
+
+    if (requestedChapter === 0) {
+      const hasPreface = this.bookLoader?.chapterFiles.some(
+        (c) => c.number === 0,
+      );
+      console.log("🔍 hasPreface:", hasPreface);
+
+      if (hasPreface) {
+        console.log("📖 Opening preface chapter (0)");
+        return 0;
+      } else {
+        console.log("ℹ️ Preface not available, opening chapter 1");
+        return 1;
+      }
+    }
+
+    const maxChapter = this.bookLoader?.totalChapters
+      ? this.bookLoader.totalChapters - 1
+      : 0;
+
+    if (requestedChapter > maxChapter) {
+      console.log(
+        `ℹ️ Chapter ${requestedChapter} not available, opening last chapter (${maxChapter})`,
+      );
+      return maxChapter;
+    }
+
+    console.log(`📖 Opening chapter ${requestedChapter}`);
+    return requestedChapter;
+  }
+
+  async continueInitialization(startChapter) {
+    console.log("🔍 continueInitialization START");
+    console.log("🔍 received startChapter =", startChapter);
+    console.log("🔍 this.requestedChapter =", this.requestedChapter);
     if (this.isInitialized) return;
 
     try {
@@ -165,6 +199,8 @@ class ReadingApp {
       if (!bookLoaded) {
         throw new Error(`Failed to load book: ${this.bookId}`);
       }
+
+      const chapterToOpen = this.resolveStartChapter(startChapter);
 
       this.mediaInjector = new MediaInjector(
         this.themeManager,
@@ -183,7 +219,8 @@ class ReadingApp {
       this.setupUI();
       this.setupScrollProgressIndicator();
 
-      await this.goToChapter(startChapter);
+      console.log(`📖 Loading initial chapter: ${chapterToOpen}`);
+      await this.goToChapter(chapterToOpen);
 
       this.isInitialized = true;
       console.log("✅ Reading App fully initialized!");
@@ -202,6 +239,26 @@ class ReadingApp {
 
     chapterNumber = parseInt(chapterNumber);
 
+    console.log(`📍 goToChapter called with: ${chapterNumber}`);
+
+    const chapterExists = this.bookLoader.chapterFiles.some(
+      (c) => c.number === chapterNumber,
+    );
+
+    if (!chapterExists) {
+      console.warn(`⚠️ Chapter ${chapterNumber} does not exist`);
+      if (chapterNumber === 0) {
+        chapterNumber = 1;
+      } else {
+        const availableChapters = this.bookLoader.chapterFiles.map(
+          (c) => c.number,
+        );
+        chapterNumber = Math.max(...availableChapters);
+      }
+
+      console.log(`🔄 Falling back to chapter ${chapterNumber}`);
+    }
+
     const url = new URL(window.location);
     url.searchParams.set("book", this.bookId);
     url.searchParams.set("chapter", chapterNumber);
@@ -209,28 +266,24 @@ class ReadingApp {
 
     let html = await this.bookLoader.loadChapter(chapterNumber);
 
-    if (this.mediaInjector) {
-      const mediaRules = this.bookLoader.getMediaRulesForChapter(chapterNumber);
-      this.mediaInjector.setBookRules(mediaRules);
-      html = await this.mediaInjector.injectMedia(html, chapterNumber);
-    }
+    if (chapterNumber > 0) {
+      if (this.mediaInjector) {
+        const mediaRules =
+          this.bookLoader.getMediaRulesForChapter(chapterNumber);
+        this.mediaInjector.setBookRules(mediaRules);
+        html = await this.mediaInjector.injectMedia(html, chapterNumber);
+      }
 
-    if (this.hintInjector) {
-      html = await this.hintInjector.injectHints(html, chapterNumber);
+      if (this.hintInjector) {
+        html = await this.hintInjector.injectHints(html, chapterNumber);
+      }
     }
 
     const contentElement = document.getElementById("chapter-content");
     if (contentElement) {
       contentElement.innerHTML = html;
-      this.centerSpecialElements();
 
-      const breadcrumb = document.getElementById("current-chapter-title");
-      if (breadcrumb) {
-        const chapterTitle =
-          this.bookLoader.chapterTitles[chapterNumber] ||
-          `Глава ${chapterNumber}`;
-        breadcrumb.textContent = chapterTitle;
-      }
+      this.centerSpecialElements();
 
       this.bookLoader.currentChapter = chapterNumber;
       this.bookLoader.updateNavigationUI();
@@ -239,17 +292,12 @@ class ReadingApp {
 
       this.setupParagraphHighlighting();
 
-      if (this.mediaInjector) {
+      if (this.mediaInjector && chapterNumber > 0) {
         this.mediaInjector.reinitializeAudioPlayersInContainer(contentElement);
       }
 
-      const chapterTitle =
-        this.bookLoader.chapterTitles[chapterNumber] ||
-        `Глава ${chapterNumber}`;
-      document.title = `${chapterTitle} — ${this.bookLoader.bookInfo?.title || "Читальный движок"}`;
-
       setTimeout(() => {
-        if (this.hintInjector) {
+        if (this.hintInjector && chapterNumber > 0) {
           this.hintInjector.setupHintTooltips();
         }
       }, 50);
@@ -343,29 +391,6 @@ class ReadingApp {
       h2.style.textAlign = "center";
       h2.classList.add("centered-heading");
     });
-  }
-
-  checkRequiredElements() {
-    const requiredElements = [
-      "chapter-content",
-      "reading-area",
-      "menu-toggle",
-      "theme-toggle",
-      "settings-toggle",
-      "age-gate-modal",
-      "age-gate-accept",
-      "age-gate-decline",
-    ];
-
-    const missingElements = requiredElements.filter(
-      (id) => !document.getElementById(id),
-    );
-
-    if (missingElements.length > 0) {
-      console.warn(
-        `Missing required DOM elements for age gate: ${missingElements.join(", ")}`,
-      );
-    }
   }
 
   hideLoadingOverlay() {
@@ -594,18 +619,19 @@ function setupIOSAudioHandling() {
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📄 DOM loaded, starting app background init...");
-
   setupIOSAudioHandling();
 
-  const app = new ReadingApp();
+  if (!window.readingAppInstance) {
+    window.readingAppInstance = new ReadingApp();
 
-  setTimeout(() => {
-    app.init().catch((error) => {
-      console.error("App initialization failed:", error);
-      app.showErrorState(error);
-      app.hideLoadingOverlay();
-    });
-  }, 100);
+    setTimeout(() => {
+      window.readingAppInstance.init().catch((error) => {
+        console.error("App initialization failed:", error);
+        window.readingAppInstance.showErrorState(error);
+        window.readingAppInstance.hideLoadingOverlay();
+      });
+    }, 100);
+  }
 
   if (
     window.location.hostname === "localhost" ||
@@ -613,19 +639,19 @@ document.addEventListener("DOMContentLoaded", () => {
   ) {
     window.debugApp = () => {
       console.log("📋 App state:", {
-        themeManager: app.themeManager,
-        chapterLoader: app.chapterLoader,
-        settingsManager: app.settingsManager,
-        searchManager: app.searchManager,
-        mediaInjector: app.mediaInjector,
-        isInitialized: app.isInitialized,
-        error: app.initializationError,
+        themeManager: window.readingAppInstance?.themeManager,
+        bookLoader: window.readingAppInstance?.bookLoader,
+        settingsManager: window.readingAppInstance?.settingsManager,
+        searchManager: window.readingAppInstance?.searchManager,
+        mediaInjector: window.readingAppInstance?.mediaInjector,
+        isInitialized: window.readingAppInstance?.isInitialized,
+        error: window.readingAppInstance?.initializationError,
       });
     };
 
     console.log("\n📋 Debug commands available:");
     console.log("window.debugApp() - show app state");
-    console.log("window.readingApp - access app instance");
+    console.log("window.readingAppInstance - access app instance");
   }
 });
 

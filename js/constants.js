@@ -53,3 +53,6 @@ export const CSS_VARS = [
 ];
 
 export const MEDIA_CONFIG_PATH = "./config/media-rules.json";
+export const AGE_GATE_CONFIRMED_KEY = 'ageGateConfirmed';
+export const AGE_GATE_CONFIRMED_TIMESTAMP = 'ageGateConfirmedTimestamp';
+export const AGE_GATE_SESSION_DURATION = 24 * 60 * 60 * 1000;
