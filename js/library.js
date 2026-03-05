@@ -191,6 +191,7 @@ class LibraryApp {
               tags: info.tags || [],
               hasPreface: hasPreface,
               writtenDate: info.writtenDate || null,
+              finished: info.finished || false, // Добавляем поле finished
             });
           }
         } catch (error) {
@@ -207,6 +208,7 @@ class LibraryApp {
           ageRating: b.ageRating,
           hasPreface: b.hasPreface,
           writtenDate: b.writtenDate,
+          finished: b.finished,
         })),
       );
     } catch (error) {
@@ -302,6 +304,15 @@ class LibraryApp {
     }
   }
 
+  // Новый метод для получения HTML статуса книги
+  getStatusHtml(book) {
+    if (book.finished) {
+      return '<span class="book-status status-finished" title="Произведение завершено">✅ Завершено</span>';
+    } else {
+      return '<span class="book-status status-progress" title="Произведение в процессе написания">🔄 В процессе</span>';
+    }
+  }
+
   createBookCard(book) {
     console.log("📚 Creating card for:", book.id, book.title);
 
@@ -340,6 +351,7 @@ class LibraryApp {
       ? `<span class="book-date" title="Дата написания">📅 ${formattedDate}</span>`
       : "";
 
+    const statusHtml = this.getStatusHtml(book);
     const blockOverlay = isBlocked
       ? '<div class="book-blocked-overlay"><span>🔞 18+</span></div>'
       : "";
@@ -358,6 +370,7 @@ class LibraryApp {
                 ${tagsHtml}
                 
                 <div class="book-meta">
+                    ${statusHtml}
                     ${dateHtml}
                     <span>📖 ${book.totalChapters || "?"} ${this.pluralizeChapters(book.totalChapters)}</span>
                     ${book.hasMedia ? "<span>🎵 аудио</span>" : ""}
