@@ -11,7 +11,7 @@
       "name": "От предвечной Тьмы к лунному Свету",
       "short_name": "От предвечной Тьмы к лунному Свету",
       "description": "Читать книгу «От предвечной Тьмы к лунному Свету»",
-      "url": "./book.html?book=mondschein&chapter=1"
+      "url": "./book.html?id=mondschein&chapter=1"
     }
   ]
 }

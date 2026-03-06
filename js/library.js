@@ -270,7 +270,7 @@ class LibraryApp {
           }
 
           const startChapter = hasPreface ? 0 : 1;
-          const url = `./book?book=${encodeURIComponent(bookId)}&chapter=${startChapter}`;
+          const url = `./book?id=${encodeURIComponent(bookId)}&chapter=${startChapter}`;
           console.log("🔗 Redirecting to:", url);
 
           window.location.href = url;

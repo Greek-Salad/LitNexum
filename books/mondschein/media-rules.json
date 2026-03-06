@@ -171,28 +171,53 @@
       "src": ["media/images/chat1.png"],
       "format": "image/png",
       "chapter": 7,
-      "position": "after",
-      "anchor": "Парень в шортах и носках сидит за компьютером и переписывается с друзьями:"
+      "position": "instead",
+      "anchor": "не, я ща киберпанк прохожу"
     },
     {
       "id": "image-3",
       "type": "image",
-      "src": ["media/images/meme1.png", "media/images/meme2.png", "media/images/meme3.png"],
+      "src": ["media/images/chat2.png"],
       "format": "image/png",
-      "chapter": 22,
-      "position": "after",
-      "anchor": "Он пролистнул дальше, и настроение резко поползло вниз"
+      "chapter": 17,
+      "position": "instead",
+      "anchor": "Успокойся. Она молчит. А если заговорит, у меня есть человек, который поставит ей нужный диагноз"
     },
     {
       "id": "image-4",
+      "type": "image",
+      "src": ["media/images/meme1.png", "media/images/meme2.png", "media/images/meme3.png"],
+      "format": "image/png",
+      "chapter": 22,
+      "position": "instead",
+      "anchor": "Чайный Мститель: существует. Кофеманы: напряглись"
+    },
+    {
+      "id": "image-5",
       "type": "image",
       "src": ["media/images/armor.png"],
       "format": "image/png",
       "chapter": 23,
       "position": "after",
-      "anchor": "Последним штрихом стал капюшон, погружающий остальную часть лица в непроглядную тьму",
-      "width": "100%",
-      "height": "auto"
+      "anchor": "Последним штрихом стал капюшон, погружающий остальную часть лица в непроглядную тьму"
+    },
+    {
+      "id": "image-6",
+      "type": "image",
+      "src": ["media/images/chat3.png"],
+      "format": "image/png",
+      "chapter": 24,
+      "position": "instead",
+      "anchor": "Деньги заходят, бумага подписывается, объект внезапно признаётся аварийным"
+    },
+    {
+      "id": "image-7",
+      "type": "image",
+      "src": ["media/images/chat4.png"],
+      "format": "image/png",
+      "chapter": 24,
+      "position": "instead",
+      "anchor": "Плохие новости. Один депутат узнал о нашей делюге"
     }
   ],
   "settings": {

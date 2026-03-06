@@ -78,7 +78,7 @@ class ReadingApp {
     console.log("📍 Pathname:", window.location.pathname);
 
     const urlParams = new URLSearchParams(window.location.search);
-    this.bookId = urlParams.get("book");
+    this.bookId = urlParams.get("id");
 
     const chapterParam = urlParams.get("chapter");
     this.requestedChapter =
@@ -260,7 +260,7 @@ class ReadingApp {
     }
 
     const url = new URL(window.location);
-    url.searchParams.set("book", this.bookId);
+    url.searchParams.set("id", this.bookId);
     url.searchParams.set("chapter", chapterNumber);
     window.history.replaceState({}, "", url);
 
@@ -282,6 +282,10 @@ class ReadingApp {
     const contentElement = document.getElementById("chapter-content");
     if (contentElement) {
       contentElement.innerHTML = html;
+
+      if (this.mediaInjector && chapterNumber > 0) {
+        this.mediaInjector.postProcessInsteadMedia(contentElement);
+      }
 
       this.centerSpecialElements();
 

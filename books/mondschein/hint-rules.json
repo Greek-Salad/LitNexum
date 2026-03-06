@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2026-01-29T19:15:22Z",
+  "lastUpdated": "2026-03-06T20:34:18Z",
   "hints": [
     {
       "id": "hint-1",
@@ -72,13 +72,13 @@
       "id": "hint-12",
       "chapter": 7,
       "text": "Turdus pilaris",
-      "hint": "Дрозд-рябинник"
+      "hint": "лат. \"Дрозд-рябинник\""
     },
     {
       "id": "hint-13",
       "chapter": 7,
       "text": "Turdus merula",
-      "hint": "Чёрный дрозд"
+      "hint": "лат. \"Чёрный дрозд\""
     },
     {
       "id": "hint-14",

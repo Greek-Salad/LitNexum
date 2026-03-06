@@ -53,6 +53,110 @@ class MediaInjector {
     return doc.body.innerHTML;
   }
 
+  postProcessInsteadMedia(containerElement) {
+    if (!containerElement) return;
+
+    const fallbackParagraphs = containerElement.querySelectorAll(
+      "[data-media-fallback]"
+    );
+
+    if (fallbackParagraphs.length === 0) return;
+
+    console.log(
+      `🔄 Post-processing ${fallbackParagraphs.length} instead-media element(s)`
+    );
+
+    fallbackParagraphs.forEach((paragraph) => {
+      const mediaId = paragraph.getAttribute("data-media-fallback");
+      const mediaElement = containerElement.querySelector(
+        `[data-media-instead="${mediaId}"]`
+      );
+
+      if (!mediaElement) {
+        console.warn(
+          `⚠️ Media container not found for fallback "${mediaId}", showing original`
+        );
+        paragraph.style.display = "";
+        paragraph.removeAttribute("data-media-fallback");
+        return;
+      }
+
+      const images = mediaElement.querySelectorAll("img");
+
+      if (images.length === 0) {
+        paragraph.remove();
+        return;
+      }
+
+      let loadedCount = 0;
+      let errorCount = 0;
+      const totalImages = images.length;
+
+      const checkComplete = () => {
+        if (loadedCount + errorCount < totalImages) return;
+
+        if (errorCount > 0) {
+          console.log(
+            `⚠️ ${errorCount} image(s) failed, showing original paragraph`
+          );
+          paragraph.style.display = "";
+          paragraph.removeAttribute("data-media-fallback");
+          mediaElement.remove();
+        } else {
+          console.log(`✅ All ${totalImages} image(s) loaded, removing fallback paragraph`);
+          paragraph.remove();
+        }
+      };
+
+      images.forEach((img, index) => {
+        let settled = false;
+
+        const onSuccess = () => {
+          if (settled) return;
+          settled = true;
+          console.log(
+            `  ✅ Image ${index + 1}/${totalImages} loaded: ${img.naturalWidth}x${img.naturalHeight}`
+          );
+          loadedCount++;
+          checkComplete();
+        };
+
+        const onFailure = () => {
+          if (settled) return;
+          settled = true;
+          console.log(`  ❌ Image ${index + 1}/${totalImages} failed`);
+          errorCount++;
+          checkComplete();
+        };
+
+        if (img.complete) {
+          if (img.naturalHeight > 0) {
+            onSuccess();
+          } else {
+            onFailure();
+          }
+        } else {
+          img.addEventListener("load", () => {
+            if (img.naturalHeight > 0) {
+              onSuccess();
+            } else {
+              onFailure();
+            }
+          });
+
+          img.addEventListener("error", onFailure);
+
+          setTimeout(() => {
+            if (!settled) {
+              console.log(`  ⚠️ Image ${index + 1}/${totalImages} timed out`);
+              onFailure();
+            }
+          }, 10000);
+        }
+      });
+    });
+  }
+
   async applyRule(doc, rule) {
     console.log(`🔍 Looking for anchor: "${rule.anchor.substring(0, 50)}..."`);
 
@@ -60,12 +164,14 @@ class MediaInjector {
 
     if (!targetParagraph) {
       console.warn(
-        `❌ Media rule anchor not found: "${rule.anchor}" in chapter ${rule.chapter}`,
+        `❌ Media rule anchor not found: "${rule.anchor}" in chapter ${rule.chapter}`
       );
       return;
     }
 
     console.log(`✅ Found anchor paragraph`);
+
+    const originalHTML = targetParagraph.innerHTML;
 
     const mediaElement = await this.createMediaElement(rule);
 
@@ -79,16 +185,35 @@ class MediaInjector {
       return;
     }
 
-    if (rule.position === "before") {
+    if (rule.position === "instead") {
+      this.applyInsteadPosition(targetParagraph, mediaElement, rule);
+    } else if (rule.position === "before") {
       targetParagraph.parentNode.insertBefore(mediaElement, targetParagraph);
     } else {
       targetParagraph.parentNode.insertBefore(
         mediaElement,
-        targetParagraph.nextSibling,
+        targetParagraph.nextSibling
       );
     }
 
-    console.log(`✅ Media element inserted`);
+    console.log(`✅ Media element inserted with position: ${rule.position}`);
+  }
+
+  applyInsteadPosition(targetParagraph, mediaElement, rule) {
+    const mediaId = rule.id || `media-${Date.now()}`;
+
+    targetParagraph.style.display = "none";
+    targetParagraph.setAttribute("data-media-fallback", mediaId);
+
+    mediaElement.setAttribute("data-media-instead", mediaId);
+
+    targetParagraph.parentNode.insertBefore(mediaElement, targetParagraph);
+
+    const images = mediaElement.querySelectorAll("img");
+
+    if (images.length === 0) {
+      targetParagraph.remove();
+    }
   }
 
   async openLyricsPanel(audioPath, trackTitle) {
@@ -103,7 +228,7 @@ class MediaInjector {
     content.textContent = "Загрузка...";
 
     const rule = this.mediaRules.find(
-      (r) => r.src && r.src.some((s) => s.includes(audioPath.split("/").pop())),
+      (r) => r.src && r.src.some((s) => s.includes(audioPath.split("/").pop()))
     );
 
     if (rule && rule.lyrics) {
@@ -252,7 +377,7 @@ class MediaInjector {
 
     const playerHTML = this.createAudioPlayerHTML(
       normalizedPath,
-      rule.title || "Аудиофайл",
+      rule.title || "Аудиофайл"
     );
 
     container.innerHTML = playerHTML;
@@ -266,14 +391,14 @@ class MediaInjector {
           playerContainer,
           audio,
           normalizedPath,
-          rule.title || "Аудиофайл",
+          rule.title || "Аудиофайл"
         );
       } else {
         this.setupAudioPlayerControls(
           playerContainer,
           audio,
           normalizedPath,
-          rule.title || "Аудиофайл",
+          rule.title || "Аудиофайл"
         );
       }
 
@@ -417,15 +542,6 @@ class MediaInjector {
         isLauncher: true,
       });
     }
-
-    if (this.audioManager) {
-      this.audioManager.registerAudioPlayer(audio, {
-        title: trackTitle,
-        path: audioPath,
-        element: playerElement,
-        isLauncher: true,
-      });
-    }
   }
 
   stopAllCurrentPlayersExcept(currentAudio) {
@@ -445,25 +561,25 @@ class MediaInjector {
     const volumeIcon = playerElement.querySelector(".volume-icon");
     const mutedIcon = playerElement.querySelector(".muted-icon");
     const progressContainer = playerElement.querySelector(
-      ".progress-container",
+      ".progress-container"
     );
     const progressBar = playerElement.querySelector(".progress-bar");
     const timeDisplay = playerElement.querySelector(".time-display");
     const volumeSliderContainer = playerElement.querySelector(
-      ".volume-slider-container",
+      ".volume-slider-container"
     );
     const volumeSlider = playerElement.querySelector(".volume-slider");
     const statusDiv = playerElement.querySelector(".player-status");
 
     if (playerElement.classList.contains("audio-launcher")) {
       console.log(
-        "⚠️ Лаунчер попал в setupAudioPlayerControls, перенаправляем...",
+        "⚠️ Лаунчер попал в setupAudioPlayerControls, перенаправляем..."
       );
       if (trackTitle) {
         this.setupAudioLauncher(playerElement, audio, audioPath, trackTitle);
       } else {
         const registeredPlayer = this.audioManager?.getRegisteredAudioPlayer?.(
-          audio.src,
+          audio.src
         );
         const titleToUse = registeredPlayer?.title || "Неизвестный трек";
         this.setupAudioLauncher(playerElement, audio, audio.src, titleToUse);
@@ -500,14 +616,15 @@ class MediaInjector {
 
     const updateProgress = () => {
       if (!audio.duration || isNaN(audio.duration)) {
-        timeDisplay.textContent = "0:00 / 0:00";
-        progressBar.style.width = "0%";
+        if (timeDisplay) timeDisplay.textContent = "0:00 / 0:00";
+        if (progressBar) progressBar.style.width = "0%";
         return;
       }
 
       const progress = (audio.currentTime / audio.duration) * 100;
-      progressBar.style.width = `${progress}%`;
-      timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+      if (progressBar) progressBar.style.width = `${progress}%`;
+      if (timeDisplay)
+        timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
     };
 
     const updateButtonStates = () => {
@@ -642,7 +759,7 @@ class MediaInjector {
           audio.volume = volume;
           audio.muted = false;
           isMuted = false;
-          volumeSlider.style.width = `${volume * 100}%`;
+          if (volumeSlider) volumeSlider.style.width = `${volume * 100}%`;
           updateButtonStates();
         });
       }
@@ -666,7 +783,7 @@ class MediaInjector {
   setBookRules(rules) {
     this.mediaRules = rules || [];
     console.log(
-      `📦 MediaInjector set with ${this.mediaRules.length} rules for current book`,
+      `📦 MediaInjector set with ${this.mediaRules.length} rules for current book`
     );
   }
 
@@ -705,13 +822,13 @@ class MediaInjector {
   reinitializeAudioPlayersInContainer(containerElement) {
     if (!containerElement) {
       console.warn(
-        "Container element for reinitializing audio players is null",
+        "Container element for reinitializing audio players is null"
       );
       return;
     }
 
     const playerElements = containerElement.querySelectorAll(
-      ".custom-audio-player",
+      ".custom-audio-player"
     );
     playerElements.forEach((playerElement) => {
       const audioPath = playerElement.getAttribute("data-audio-path");
@@ -733,7 +850,7 @@ class MediaInjector {
           playerElement,
           audio,
           audioPath,
-          "Неизвестный трек",
+          "Неизвестный трек"
         );
       }
     });
