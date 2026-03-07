@@ -3,7 +3,7 @@
   "lastUpdated": "2026-01-29T19:15:22Z",
   "media": [
     {
-      "id": "audio-1",
+      "id": "audio-01-1",
       "type": "audio",
       "title": "Zombiez — Mondschein",
       "src": ["media/audio/mondschein.mp3"],
@@ -14,7 +14,7 @@
       "anchor": "наушниках Игоря играла песня «Mondschein» группы Zombiez"
     },
     {
-      "id": "audio-2",
+      "id": "audio-01-2",
       "type": "audio",
       "title": "Ektomorf — What Doesn't Kill Me",
       "src": ["media/audio/what_doesnt_kill_me.mp3"],
@@ -25,7 +25,7 @@
       "anchor": "Он достал смартфон, открыл приложение и вбил в поиск: Ektomorf."
     },
     {
-      "id": "audio-3",
+      "id": "audio-05-1",
       "type": "audio",
       "title": "Akelei — De Zwaarte",
       "src": ["media/audio/de_zwaarte.mp3"],
@@ -36,7 +36,7 @@
       "anchor": "Вечерний город плыл мимо — мрачный, шершавый, как старая плёнка"
     },
     {
-      "id": "audio-4",
+      "id": "audio-07-1",
       "type": "audio",
       "title": "Black Out The Sun — Cycle of Pain",
       "src": ["media/audio/cycle_of_pain.mp3"],
@@ -47,7 +47,7 @@
       "anchor": "В автобусе он решил не забивать голову мыслями и отдать своё внимание музыке"
     },
     {
-      "id": "audio-5",
+      "id": "audio-10-1",
       "type": "audio",
       "title": "Diary of Dreams — My Distant Light",
       "src": ["media/audio/my_distant_light.mp3"],
@@ -58,7 +58,7 @@
       "anchor": "so precious, so fragile"
     },
     {
-      "id": "audio-6",
+      "id": "audio-14-1",
       "type": "audio",
       "title": "Semiquaver — A New Sorrow",
       "src": ["media/audio/a_new_sorrow.mp3"],
@@ -69,7 +69,7 @@
       "anchor": "Композиция была мягкой, чуть грустной, но не безысходной"
     },
     {
-      "id": "audio-7",
+      "id": "audio-15-1",
       "type": "audio",
       "title": "Heretoir — Burial",
       "src": ["media/audio/burial.mp3"],
@@ -80,7 +80,7 @@
       "anchor": "Игорь распластался на кровати в хостеле, словно выжатый до последней капли. В наушниках играла песня «Burial» группы Heretoir"
     },
     {
-      "id": "audio-8",
+      "id": "audio-15-2",
       "type": "audio",
       "title": "Apocryphos — Leaden Waves",
       "src": ["media/audio/leaden_waves.mp3"],
@@ -91,7 +91,7 @@
       "anchor": "Он попытался их вытеснить: достал наушники, включил «Leaden Waves» от Apocryphos. Звуки были вязкие"
     },
     {
-      "id": "audio-9",
+      "id": "audio-17-1",
       "type": "audio",
       "title": "Tess Sunrise — Белая Чашка",
       "src": ["media/audio/white_cup.mp3"],
@@ -102,7 +102,7 @@
       "anchor": "Где-то между ними затесался клип: «Tess Sunrise — Белая Чашка»."
     },
     {
-      "id": "audio-10",
+      "id": "audio-19-1",
       "type": "audio",
       "title": "Рита Кушнарёвская — Тьма под кожей",
       "src": ["media/audio/the_dark_under.mp3"],
@@ -113,7 +113,7 @@
       "anchor": "Не читала. Пела. Голос звучал сильно, насыщенно, с лёгкой хрипотцой, местами переходя на надрыв:"
     },
     {
-      "id": "audio-11",
+      "id": "audio-21-1",
       "type": "audio",
       "title": "Dagoba — Vantablack",
       "src": ["media/audio/vantablack.mp3"],
@@ -124,7 +124,7 @@
       "anchor": "нашёл в плейлисте песню «Vantablack» группы Dagoba, ткнул «Play» и выкрутил громкость на максимум"
     },
     {
-      "id": "audio-12",
+      "id": "audio-21-2",
       "type": "audio",
       "title": "Nickelback — Feed The Machine",
       "src": ["media/audio/feed_the_machine.mp3"],
@@ -135,7 +135,7 @@
       "anchor": "а из колонок раздавалась бодрая песня «Feed the Machine» группы Nickelback."
     },
     {
-      "id": "audio-13",
+      "id": "audio-25-1",
       "type": "audio",
       "title": "Jeremy Zuckerman — Agni Kai",
       "src": ["media/audio/agni_kai.mp3"],
@@ -146,7 +146,7 @@
       "anchor": "Несколько секунд поиска в Интернете — и он включил трек."
     },
     {
-      "id": "audio-14",
+      "id": "audio-28-1",
       "type": "audio",
       "title": "Zombiez — Dunkelheit",
       "src": ["media/audio/dunkelheit.mp3"],
@@ -157,7 +157,7 @@
       "anchor": "Музыка должна помочь. Она всегда помогает"
     },
     {
-      "id": "image-1",
+      "id": "image-06-1",
       "type": "image",
       "src": ["media/images/yelshas_watch.png"],
       "format": "image/png",
@@ -166,7 +166,7 @@
       "anchor": "давая Йельшасу расположиться в воздухе прямо перед монитором"
     },
     {
-      "id": "image-2",
+      "id": "image-07-1",
       "type": "image",
       "src": ["media/images/chat1.png"],
       "format": "image/png",
@@ -175,7 +175,7 @@
       "anchor": "не, я ща киберпанк прохожу"
     },
     {
-      "id": "image-3",
+      "id": "image-17-1",
       "type": "image",
       "src": ["media/images/chat2.png"],
       "format": "image/png",
@@ -184,7 +184,7 @@
       "anchor": "Успокойся. Она молчит. А если заговорит, у меня есть человек, который поставит ей нужный диагноз"
     },
     {
-      "id": "image-4",
+      "id": "image-22-1",
       "type": "image",
       "src": ["media/images/meme1.png", "media/images/meme2.png", "media/images/meme3.png"],
       "format": "image/png",
@@ -193,7 +193,7 @@
       "anchor": "Чайный Мститель: существует. Кофеманы: напряглись"
     },
     {
-      "id": "image-5",
+      "id": "image-23-1",
       "type": "image",
       "src": ["media/images/armor.png"],
       "format": "image/png",
@@ -202,7 +202,34 @@
       "anchor": "Последним штрихом стал капюшон, погружающий остальную часть лица в непроглядную тьму"
     },
     {
-      "id": "image-6",
+      "id": "image-24-1",
+      "type": "image",
+      "src": ["media/images/ai1.png"],
+      "format": "image/png",
+      "chapter": 24,
+      "position": "instead",
+      "anchor": "романтический подтекст (пусть и невысказанный), мозг может"
+    },
+    {
+      "id": "image-24-2",
+      "type": "image",
+      "src": ["media/images/ai2.png"],
+      "format": "image/png",
+      "chapter": 24,
+      "position": "instead",
+      "anchor": "Границы, обозначенные вербально, должны подтверждаться действиями: дистанция, отсутствие двусмысленных жестов"
+    },
+    {
+      "id": "image-24-3",
+      "type": "image",
+      "src": ["media/images/ai3.png"],
+      "format": "image/png",
+      "chapter": 24,
+      "position": "instead",
+      "anchor": "Отсутствие чёткого договора. Помощь без обсуждения условий, сроков и ожиданий почти всегда ведёт к разочарованию."
+    },
+    {
+      "id": "image-24-4",
       "type": "image",
       "src": ["media/images/chat3.png"],
       "format": "image/png",
@@ -211,7 +238,7 @@
       "anchor": "Деньги заходят, бумага подписывается, объект внезапно признаётся аварийным"
     },
     {
-      "id": "image-7",
+      "id": "image-24-5",
       "type": "image",
       "src": ["media/images/chat4.png"],
       "format": "image/png",

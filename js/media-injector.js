@@ -57,26 +57,23 @@ class MediaInjector {
     if (!containerElement) return;
 
     const fallbackParagraphs = containerElement.querySelectorAll(
-      "[data-media-fallback]"
+      "[data-media-fallback]",
     );
 
     if (fallbackParagraphs.length === 0) return;
 
     console.log(
-      `🔄 Post-processing ${fallbackParagraphs.length} instead-media element(s)`
+      `🔄 Post-processing ${fallbackParagraphs.length} instead-media element(s)`,
     );
 
     fallbackParagraphs.forEach((paragraph) => {
       const mediaId = paragraph.getAttribute("data-media-fallback");
       const mediaElement = containerElement.querySelector(
-        `[data-media-instead="${mediaId}"]`
+        `[data-media-instead="${mediaId}"]`,
       );
 
       if (!mediaElement) {
-        console.warn(
-          `⚠️ Media container not found for fallback "${mediaId}", showing original`
-        );
-        paragraph.style.display = "";
+        console.warn(`⚠️ Media container not found for "${mediaId}"`);
         paragraph.removeAttribute("data-media-fallback");
         return;
       }
@@ -84,6 +81,7 @@ class MediaInjector {
       const images = mediaElement.querySelectorAll("img");
 
       if (images.length === 0) {
+        mediaElement.style.display = "";
         paragraph.remove();
         return;
       }
@@ -96,14 +94,14 @@ class MediaInjector {
         if (loadedCount + errorCount < totalImages) return;
 
         if (errorCount > 0) {
-          console.log(
-            `⚠️ ${errorCount} image(s) failed, showing original paragraph`
-          );
-          paragraph.style.display = "";
-          paragraph.removeAttribute("data-media-fallback");
+          console.log(`⚠️ ${errorCount} image(s) failed, keeping original`);
           mediaElement.remove();
+          paragraph.removeAttribute("data-media-fallback");
         } else {
-          console.log(`✅ All ${totalImages} image(s) loaded, removing fallback paragraph`);
+          console.log(`✅ All ${totalImages} image(s) loaded, swapping`);
+          mediaElement.style.visibility = "";
+          mediaElement.style.height = "";
+          mediaElement.style.overflow = "";
           paragraph.remove();
         }
       };
@@ -114,9 +112,6 @@ class MediaInjector {
         const onSuccess = () => {
           if (settled) return;
           settled = true;
-          console.log(
-            `  ✅ Image ${index + 1}/${totalImages} loaded: ${img.naturalWidth}x${img.naturalHeight}`
-          );
           loadedCount++;
           checkComplete();
         };
@@ -124,31 +119,21 @@ class MediaInjector {
         const onFailure = () => {
           if (settled) return;
           settled = true;
-          console.log(`  ❌ Image ${index + 1}/${totalImages} failed`);
           errorCount++;
           checkComplete();
         };
 
         if (img.complete) {
-          if (img.naturalHeight > 0) {
-            onSuccess();
-          } else {
-            onFailure();
-          }
+          img.naturalHeight > 0 ? onSuccess() : onFailure();
         } else {
           img.addEventListener("load", () => {
-            if (img.naturalHeight > 0) {
-              onSuccess();
-            } else {
-              onFailure();
-            }
+            img.naturalHeight > 0 ? onSuccess() : onFailure();
           });
-
           img.addEventListener("error", onFailure);
 
           setTimeout(() => {
             if (!settled) {
-              console.log(`  ⚠️ Image ${index + 1}/${totalImages} timed out`);
+              console.log(`⚠️ Image ${index + 1}/${totalImages} timed out`);
               onFailure();
             }
           }, 10000);
@@ -160,18 +145,18 @@ class MediaInjector {
   async applyRule(doc, rule) {
     console.log(`🔍 Looking for anchor: "${rule.anchor.substring(0, 50)}..."`);
 
-    const targetParagraph = this.findParagraphByText(doc, rule.anchor);
+    const targetElement = this.findAnchorElementByText(doc, rule.anchor);
 
-    if (!targetParagraph) {
+    if (!targetElement) {
       console.warn(
-        `❌ Media rule anchor not found: "${rule.anchor}" in chapter ${rule.chapter}`
+        `❌ Media rule anchor not found: "${rule.anchor}" in chapter ${rule.chapter}`,
       );
       return;
     }
 
-    console.log(`✅ Found anchor paragraph`);
-
-    const originalHTML = targetParagraph.innerHTML;
+    console.log(
+      `✅ Found anchor element: <${targetElement.tagName.toLowerCase()}>`,
+    );
 
     const mediaElement = await this.createMediaElement(rule);
 
@@ -186,13 +171,13 @@ class MediaInjector {
     }
 
     if (rule.position === "instead") {
-      this.applyInsteadPosition(targetParagraph, mediaElement, rule);
+      this.applyInsteadPosition(targetElement, mediaElement, rule);
     } else if (rule.position === "before") {
-      targetParagraph.parentNode.insertBefore(mediaElement, targetParagraph);
+      targetElement.parentNode.insertBefore(mediaElement, targetElement);
     } else {
-      targetParagraph.parentNode.insertBefore(
+      targetElement.parentNode.insertBefore(
         mediaElement,
-        targetParagraph.nextSibling
+        targetElement.nextSibling,
       );
     }
 
@@ -202,18 +187,14 @@ class MediaInjector {
   applyInsteadPosition(targetParagraph, mediaElement, rule) {
     const mediaId = rule.id || `media-${Date.now()}`;
 
-    targetParagraph.style.display = "none";
-    targetParagraph.setAttribute("data-media-fallback", mediaId);
-
+    mediaElement.style.visibility = "hidden";
+    mediaElement.style.height = "0";
+    mediaElement.style.overflow = "hidden";
     mediaElement.setAttribute("data-media-instead", mediaId);
 
+    targetParagraph.setAttribute("data-media-fallback", mediaId);
+
     targetParagraph.parentNode.insertBefore(mediaElement, targetParagraph);
-
-    const images = mediaElement.querySelectorAll("img");
-
-    if (images.length === 0) {
-      targetParagraph.remove();
-    }
   }
 
   async openLyricsPanel(audioPath, trackTitle) {
@@ -228,7 +209,7 @@ class MediaInjector {
     content.textContent = "Загрузка...";
 
     const rule = this.mediaRules.find(
-      (r) => r.src && r.src.some((s) => s.includes(audioPath.split("/").pop()))
+      (r) => r.src && r.src.some((s) => s.includes(audioPath.split("/").pop())),
     );
 
     if (rule && rule.lyrics) {
@@ -262,11 +243,11 @@ class MediaInjector {
     }
   }
 
-  findParagraphByText(doc, searchText) {
-    const paragraphs = doc.querySelectorAll("p");
-    for (const paragraph of paragraphs) {
-      if (paragraph.textContent.includes(searchText)) {
-        return paragraph;
+  findAnchorElementByText(doc, searchText) {
+    const elements = doc.querySelectorAll("p, blockquote");
+    for (const element of elements) {
+      if (element.textContent.includes(searchText)) {
+        return element;
       }
     }
     return null;
@@ -336,7 +317,7 @@ class MediaInjector {
     const img = Utils.createElement("img", "media-image", {
       src: normalizedPath,
       alt: rule.alt || `Изображение ${rule.id || "unknown"} - ${index + 1}`,
-      loading: "lazy",
+      ...(rule.position !== "instead" && { loading: "lazy" }),
     });
 
     if (rule.width) img.style.width = rule.width;
@@ -377,7 +358,7 @@ class MediaInjector {
 
     const playerHTML = this.createAudioPlayerHTML(
       normalizedPath,
-      rule.title || "Аудиофайл"
+      rule.title || "Аудиофайл",
     );
 
     container.innerHTML = playerHTML;
@@ -391,14 +372,14 @@ class MediaInjector {
           playerContainer,
           audio,
           normalizedPath,
-          rule.title || "Аудиофайл"
+          rule.title || "Аудиофайл",
         );
       } else {
         this.setupAudioPlayerControls(
           playerContainer,
           audio,
           normalizedPath,
-          rule.title || "Аудиофайл"
+          rule.title || "Аудиофайл",
         );
       }
 
@@ -561,25 +542,25 @@ class MediaInjector {
     const volumeIcon = playerElement.querySelector(".volume-icon");
     const mutedIcon = playerElement.querySelector(".muted-icon");
     const progressContainer = playerElement.querySelector(
-      ".progress-container"
+      ".progress-container",
     );
     const progressBar = playerElement.querySelector(".progress-bar");
     const timeDisplay = playerElement.querySelector(".time-display");
     const volumeSliderContainer = playerElement.querySelector(
-      ".volume-slider-container"
+      ".volume-slider-container",
     );
     const volumeSlider = playerElement.querySelector(".volume-slider");
     const statusDiv = playerElement.querySelector(".player-status");
 
     if (playerElement.classList.contains("audio-launcher")) {
       console.log(
-        "⚠️ Лаунчер попал в setupAudioPlayerControls, перенаправляем..."
+        "⚠️ Лаунчер попал в setupAudioPlayerControls, перенаправляем...",
       );
       if (trackTitle) {
         this.setupAudioLauncher(playerElement, audio, audioPath, trackTitle);
       } else {
         const registeredPlayer = this.audioManager?.getRegisteredAudioPlayer?.(
-          audio.src
+          audio.src,
         );
         const titleToUse = registeredPlayer?.title || "Неизвестный трек";
         this.setupAudioLauncher(playerElement, audio, audio.src, titleToUse);
@@ -783,7 +764,7 @@ class MediaInjector {
   setBookRules(rules) {
     this.mediaRules = rules || [];
     console.log(
-      `📦 MediaInjector set with ${this.mediaRules.length} rules for current book`
+      `📦 MediaInjector set with ${this.mediaRules.length} rules for current book`,
     );
   }
 
@@ -822,13 +803,13 @@ class MediaInjector {
   reinitializeAudioPlayersInContainer(containerElement) {
     if (!containerElement) {
       console.warn(
-        "Container element for reinitializing audio players is null"
+        "Container element for reinitializing audio players is null",
       );
       return;
     }
 
     const playerElements = containerElement.querySelectorAll(
-      ".custom-audio-player"
+      ".custom-audio-player",
     );
     playerElements.forEach((playerElement) => {
       const audioPath = playerElement.getAttribute("data-audio-path");
@@ -850,7 +831,7 @@ class MediaInjector {
           playerElement,
           audio,
           audioPath,
-          "Неизвестный трек"
+          "Неизвестный трек",
         );
       }
     });
