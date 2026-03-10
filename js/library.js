@@ -72,27 +72,28 @@ class LibraryApp {
       return;
     }
 
-    const modalMessage = message || 
+    const modalMessage =
+      message ||
       "Этот сайт содержит контент, предназначенный исключительно для лиц, достигших 18 лет.\n" +
-      "Входя на этот сайт, вы подтверждаете, что вам уже есть 18 лет и вы согласны с тем, что будете\n" +
-      "использовать этот сайт на свой страх и риск.\n" +
-      "Владелец сайта не несёт ответственности за любой ущерб, который может возникнуть в результате\n" +
-      "использования этого сайта несовершеннолетними лицами.";
+        "Входя на этот сайт, вы подтверждаете, что вам уже есть 18 лет и вы согласны с тем, что будете\n" +
+        "использовать этот сайт на свой страх и риск.\n" +
+        "Владелец сайта не несёт ответственности за любой ущерб, который может возникнуть в результате\n" +
+        "использования этого сайта несовершеннолетними лицами.";
 
     const modal = document.createElement("div");
     modal.id = "age-gate-modal";
     modal.className = "age-gate-modal";
     modal.innerHTML = `
       <div class="age-gate-content">
-        <h2>${message ? 'Требуется подтверждение' : 'Предупреждение о возрасте'}</h2>
-        <p>${modalMessage.replace(/\n/g, '<br>')}</p>
-        ${!message ? '<p>Если вам ещё нет 18 лет, пожалуйста, покиньте этот сайт.</p>' : ''}
+        <h2>${message ? "Требуется подтверждение" : "Предупреждение о возрасте"}</h2>
+        <p>${modalMessage.replace(/\n/g, "<br>")}</p>
+        ${!message ? "<p>Если вам ещё нет 18 лет, пожалуйста, покиньте этот сайт.</p>" : ""}
         <div class="age-gate-buttons">
           <button id="age-gate-accept" class="age-gate-btn accept-btn">
             Мне уже есть 18 лет
           </button>
           <button id="age-gate-decline" class="age-gate-btn decline-btn">
-            ${message ? 'Закрыть' : 'Мне ещё нет 18 лет'}
+            ${message ? "Закрыть" : "Мне ещё нет 18 лет"}
           </button>
         </div>
       </div>
@@ -118,9 +119,9 @@ class LibraryApp {
       this.ageConfirmed = true;
       Utils.saveToStorage(AGE_GATE_CONFIRMED_KEY, true);
       Utils.saveToStorage(AGE_GATE_CONFIRMED_TIMESTAMP, Date.now());
-      
+
       modal.remove();
-      
+
       const overlay = document.getElementById("overlay");
       if (overlay) {
         overlay.classList.remove("visible");
@@ -131,12 +132,12 @@ class LibraryApp {
 
     declineBtn.addEventListener("click", () => {
       modal.remove();
-      
+
       const overlay = document.getElementById("overlay");
       if (overlay) {
         overlay.classList.remove("visible");
       }
-      
+
       if (!message) {
         this.render();
       }
@@ -243,39 +244,50 @@ class LibraryApp {
     console.log(`🔍 Found ${cards.length} cards in DOM`);
 
     cards.forEach((card) => {
-      card.addEventListener(
-        "click",
-        function (event) {
-          const clickedCard = event.currentTarget;
-          const bookId = clickedCard.dataset.bookId;
-          const hasPreface = clickedCard.dataset.hasPreface === "true";
-          const ageRating = parseInt(clickedCard.dataset.ageRating) || 0;
-
-          console.log(
-            "🔍 CLICK DETECTED! bookId:",
-            bookId,
-            "ageRating:",
-            ageRating,
-          );
-
-          if (!bookId) {
-            console.error("❌ No bookId found!");
-            return;
-          }
-
-          if (ageRating >= 18 && !this.ageConfirmed) {
-            const message = `Для доступа к книге "${clickedCard.querySelector('.book-title')?.textContent || 'этой книге'}" необходимо подтвердить, что вам есть 18 лет.`;
-            this.createAgeGateModal(message);
-            return;
-          }
-
-          const startChapter = hasPreface ? 0 : 1;
-          const url = `./book?id=${encodeURIComponent(bookId)}&chapter=${startChapter}`;
-          console.log("🔗 Redirecting to:", url);
-
-          window.location.href = url;
-        }.bind(this),
+      const clickableElements = card.querySelectorAll(
+        ".book-cover-wrapper, .book-title",
       );
+
+      clickableElements.forEach((element) => {
+        element.addEventListener(
+          "click",
+          function (event) {
+            event.stopPropagation();
+
+            const bookCard = element.closest(".book-card");
+            const bookId = bookCard.dataset.bookId;
+            const hasPreface = bookCard.dataset.hasPreface === "true";
+            const ageRating = parseInt(bookCard.dataset.ageRating) || 0;
+
+            console.log(
+              "🔍 CLICK DETECTED! bookId:",
+              bookId,
+              "ageRating:",
+              ageRating,
+            );
+
+            if (!bookId) {
+              console.error("❌ No bookId found!");
+              return;
+            }
+
+            if (ageRating >= 18 && !this.ageConfirmed) {
+              const title =
+                bookCard.querySelector(".book-title")?.textContent ||
+                "этой книге";
+              const message = `Для доступа к книге "${title}" необходимо подтвердить, что вам есть 18 лет.`;
+              this.createAgeGateModal(message);
+              return;
+            }
+
+            const startChapter = hasPreface ? 0 : 1;
+            const url = `./book?id=${encodeURIComponent(bookId)}&chapter=${startChapter}`;
+            console.log("🔗 Redirecting to:", url);
+
+            window.location.href = url;
+          }.bind(this),
+        );
+      });
     });
   }
 
@@ -289,15 +301,15 @@ class LibraryApp {
 
   formatDate(dateString) {
     if (!dateString) return null;
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
       const year = date.getFullYear();
-      
+
       return `${day}.${month}.${year}`;
     } catch {
       return dateString;
@@ -347,7 +359,7 @@ class LibraryApp {
         : "";
 
     const formattedDate = this.formatDate(book.writtenDate);
-    const dateHtml = formattedDate 
+    const dateHtml = formattedDate
       ? `<span class="book-date" title="Дата написания">📅 ${formattedDate}</span>`
       : "";
 

@@ -62,16 +62,22 @@ class HintInjector {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
 
+    const appliedHints = new Set();
+
     for (const hintRule of this.hints) {
       if (hintRule.chapter === chapterNumber) {
-        this.applyHint(doc, hintRule);
+        this.applyHint(doc, hintRule, appliedHints);
       }
     }
 
     return doc.body.innerHTML;
   }
 
-  applyHint(doc, hintRule) {
+  applyHint(doc, hintRule, appliedHints) {
+    if (appliedHints.has(hintRule.id)) {
+      return;
+    }
+
     const paragraphs = doc.querySelectorAll("p");
 
     for (const p of paragraphs) {
@@ -85,20 +91,32 @@ class HintInjector {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = p.innerHTML;
 
-        const fullText = tempDiv.textContent;
-        const regex = new RegExp(Utils.escapeRegex(hintRule.text), "g");
-
-        const newHTML = this.replaceTextWithHint(
-          fullText,
+        const newHTML = this.replaceTextWithHintOnce(
           hintRule.text,
           hintRule.hint,
           tempDiv.innerHTML,
         );
         p.innerHTML = newHTML;
 
-        console.log(`✅ Text wrapped with hint: ${hintRule.text}`);
+        console.log(
+          `✅ Text wrapped with hint (first occurrence only): ${hintRule.text}`,
+        );
+
+        appliedHints.add(hintRule.id);
+        return;
       }
     }
+  }
+
+  replaceTextWithHintOnce(searchText, hintText, originalHTML) {
+    const regex = new RegExp(Utils.escapeRegex(searchText));
+
+    const safeHintText = this.escapeHtml(hintText);
+
+    return originalHTML.replace(
+      regex,
+      `<u data-hint="${safeHintText}">${searchText}</u>`,
+    );
   }
 
   replaceTextWithHint(fullText, searchText, hintText, originalHTML) {

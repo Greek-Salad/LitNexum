@@ -18,13 +18,9 @@ class BookLoader {
 
     try {
       await this.loadBookInfo();
-
       await this.scanChapters();
-
       await this.loadChapterTitles();
-
       await this.loadMediaRules();
-
       await this.loadHintRules();
 
       console.log(
