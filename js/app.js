@@ -243,12 +243,10 @@ class ReadingApp {
       this.isInitialized = true;
       console.log("✅ Reading App fully initialized!");
 
-      this.hideGlobalLoadingOverlay();
       window.readingApp = this;
     } catch (error) {
       console.error("❌ Failed to initialize app:", error);
       this.showErrorState(error);
-      this.hideGlobalLoadingOverlay();
       this.hideChapterLoadingOverlay();
     }
   }
@@ -419,26 +417,6 @@ class ReadingApp {
     });
   }
 
-  hideGlobalLoadingOverlay() {
-    const loadingOverlay = document.getElementById("loading-overlay");
-    if (loadingOverlay) {
-      loadingOverlay.style.transition =
-        "opacity 0.3s ease, visibility 0.3s ease";
-      loadingOverlay.style.opacity = "0";
-      loadingOverlay.style.visibility = "hidden";
-
-      setTimeout(() => {
-        if (loadingOverlay.parentNode) {
-          loadingOverlay.remove();
-        }
-      }, 300);
-    }
-  }
-
-  hideLoadingOverlay() {
-    this.hideGlobalLoadingOverlay();
-  }
-
   setupUI() {
     this.setupMenu();
     this.setupLyricsPanel();
@@ -561,7 +539,6 @@ class ReadingApp {
   }
 
   showErrorState(error) {
-    this.hideGlobalLoadingOverlay();
     this.hideChapterLoadingOverlay();
     const contentElement = document.getElementById("chapter-content");
     if (!contentElement) return;
@@ -655,16 +632,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!window.readingAppInstance) {
     window.readingAppInstance = new ReadingApp();
 
-    const globalOverlay = document.getElementById('loading-overlay');
-    if (globalOverlay) {
-      globalOverlay.style.display = 'flex';
-    }
-
     setTimeout(() => {
       window.readingAppInstance.init().catch((error) => {
         console.error("App initialization failed:", error);
         window.readingAppInstance.showErrorState(error);
-        window.readingAppInstance.hideLoadingOverlay();
       });
     }, 100);
   }
