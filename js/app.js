@@ -25,6 +25,23 @@ class ReadingApp {
     this.initializationPromise = null;
     this.requestedChapter = 1;
     this.initStarted = false;
+    this.isChapterLoading = false;
+  }
+
+  showChapterLoadingOverlay() {
+    const overlay = document.getElementById('chapter-loading-overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      this.isChapterLoading = true;
+    }
+  }
+
+  hideChapterLoadingOverlay() {
+    const overlay = document.getElementById('chapter-loading-overlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+      this.isChapterLoading = false;
+    }
   }
 
   async startBackgroundInitialization() {
@@ -220,22 +237,26 @@ class ReadingApp {
       this.setupScrollProgressIndicator();
 
       console.log(`📖 Loading initial chapter: ${chapterToOpen}`);
+      this.showChapterLoadingOverlay();
       await this.goToChapter(chapterToOpen);
 
       this.isInitialized = true;
       console.log("✅ Reading App fully initialized!");
 
-      this.hideLoadingOverlay();
+      this.hideGlobalLoadingOverlay();
       window.readingApp = this;
     } catch (error) {
       console.error("❌ Failed to initialize app:", error);
       this.showErrorState(error);
-      this.hideLoadingOverlay();
+      this.hideGlobalLoadingOverlay();
+      this.hideChapterLoadingOverlay();
     }
   }
 
   async goToChapter(chapterNumber) {
     if (!this.bookLoader) return;
+
+    this.showChapterLoadingOverlay();
 
     chapterNumber = parseInt(chapterNumber);
 
@@ -306,6 +327,7 @@ class ReadingApp {
         }
       }, 50);
     }
+    this.hideChapterLoadingOverlay();
   }
 
   setupParagraphHighlighting() {
@@ -397,7 +419,7 @@ class ReadingApp {
     });
   }
 
-  hideLoadingOverlay() {
+  hideGlobalLoadingOverlay() {
     const loadingOverlay = document.getElementById("loading-overlay");
     if (loadingOverlay) {
       loadingOverlay.style.transition =
@@ -411,6 +433,10 @@ class ReadingApp {
         }
       }, 300);
     }
+  }
+
+  hideLoadingOverlay() {
+    this.hideGlobalLoadingOverlay();
   }
 
   setupUI() {
@@ -535,7 +561,8 @@ class ReadingApp {
   }
 
   showErrorState(error) {
-    this.hideLoadingOverlay();
+    this.hideGlobalLoadingOverlay();
+    this.hideChapterLoadingOverlay();
     const contentElement = document.getElementById("chapter-content");
     if (!contentElement) return;
 
@@ -627,6 +654,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!window.readingAppInstance) {
     window.readingAppInstance = new ReadingApp();
+
+    const globalOverlay = document.getElementById('loading-overlay');
+    if (globalOverlay) {
+      globalOverlay.style.display = 'flex';
+    }
 
     setTimeout(() => {
       window.readingAppInstance.init().catch((error) => {

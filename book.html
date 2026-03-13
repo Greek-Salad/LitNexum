@@ -22,24 +22,11 @@
             overflow: hidden;
             height: 100vh;
         }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
     </style>
 </head>
 
 <body>
-    <div id="loading-overlay" class="loading-overlay">
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
         <div class="spinner"></div>
         <p>Загрузка читалки...</p>
     </div>
@@ -152,6 +139,10 @@
         </header>
 
         <div class="reading-area-wrapper">
+            <div id="chapter-loading-overlay" class="chapter-loading-overlay" style="display: none;">
+                <div class="spinner"></div>
+                <p>Загрузка главы...</p>
+            </div>
             <article id="reading-area" class="reading-area">
                 <div id="chapter-content" class="chapter-content" role="article">
                 </div>

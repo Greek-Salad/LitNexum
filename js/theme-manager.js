@@ -10,6 +10,16 @@ class ThemeManager {
       light: { ...THEME_PRESETS.light },
       dark: { ...THEME_PRESETS.dark },
     };
+    this.LINK_COLORS = {
+      light: {
+        base: "#1a5fb4",
+        hover: "#0d47a1",
+      },
+      dark: {
+        base: "#8ab4f8",
+        hover: "#aecbfa",
+      }
+    };
     this.currentPreset = "light";
     this.customColors = { ...THEME_PRESETS.light };
     this.isApplying = false;
@@ -86,7 +96,6 @@ class ThemeManager {
     }
 
     const bgColor = this.customColors.bg;
-    // Alternative: const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-bg').trim();
 
     if (bgColor && /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(bgColor)) {
       this.metaThemeColor.setAttribute("content", bgColor);
@@ -94,6 +103,11 @@ class ThemeManager {
     } else {
       console.warn(`Invalid theme-color value: ${bgColor}`);
     }
+  }
+
+  isThemeLight() {
+    const bgColor = this.customColors.bg;
+    return !Utils.isDarkColor(bgColor);
   }
 
   applyMainColors() {
@@ -104,7 +118,9 @@ class ThemeManager {
     root.style.setProperty("--text-color", textColor);
 
     const isBgDark = Utils.isDarkColor(bgColor);
-    console.log("🎨 Theme colors:", { bgColor, textColor, isBgDark });
+    const isThemeLight = this.isThemeLight();
+    
+    console.log("🎨 Theme colors:", { bgColor, textColor, isBgDark, isThemeLight });
 
     const adjust = (color, amount) => this.adjustColor(color, amount);
 
@@ -133,6 +149,10 @@ class ThemeManager {
     root.style.setProperty("--btn-text", textColor);
     root.style.setProperty("--btn-hover", adjust(btnBg, 0.1));
     root.style.setProperty("--btn-active", adjust(btnBg, 0.15));
+    // root.style.setProperty("--preset-btn-bg", btnBg);
+    // root.style.setProperty("--preset-btn-text", textColor);
+    // root.style.setProperty("--preset-btn-border", adjust(bgColor, isBgDark ? 0.15 : -0.15));
+    // root.style.setProperty("--preset-btn-hover", adjust(btnBg, 0.1));
 
     root.style.setProperty(
       "--border-color",
@@ -144,10 +164,13 @@ class ThemeManager {
       adjust(bgColor, isBgDark ? 0.1 : -0.1),
     );
 
-    const isTextDark = Utils.isDarkColor(textColor);
-    const linkColor = adjust(textColor, isTextDark ? -0.3 : 0.3);
-    root.style.setProperty("--link-color", linkColor);
-    root.style.setProperty("--link-hover", adjust(linkColor, 0.1));
+    if (isThemeLight) {
+      root.style.setProperty("--link-color", this.LINK_COLORS.light.base);
+      root.style.setProperty("--link-hover", this.LINK_COLORS.light.hover);
+    } else {
+      root.style.setProperty("--link-color", this.LINK_COLORS.dark.base);
+      root.style.setProperty("--link-hover", this.LINK_COLORS.dark.hover);
+    }
 
     const highlightColor = isBgDark
       ? "rgba(138, 180, 248, 0.2)"
@@ -157,6 +180,10 @@ class ThemeManager {
     root.style.setProperty(
       "--progress-bg",
       adjust(bgColor, isBgDark ? 0.1 : -0.1),
+    );
+
+    root.style.setProperty("--progress-fill", 
+      isThemeLight ? this.LINK_COLORS.light.base : this.LINK_COLORS.dark.base
     );
 
     root.style.setProperty("--player-bg", bgColor);
@@ -336,7 +363,6 @@ class ThemeManager {
 
     console.log(`🎨 Setting custom ${type} color: ${color}`);
     console.log(`🎨 Before change:`, { ...this.customColors });
-    console.log(`🎨 Preset light:`, { ...this.PRESETS.light });
 
     this.customColors[type] = color;
     console.log(`🎨 After change:`, { ...this.customColors });
