@@ -94,6 +94,8 @@ class ReadingApp {
     console.log("📍 Current URL:", window.location.href);
     console.log("📍 Pathname:", window.location.pathname);
 
+    this.showChapterLoadingOverlay();
+
     const urlParams = new URLSearchParams(window.location.search);
     this.bookId = urlParams.get("id");
 
@@ -237,7 +239,6 @@ class ReadingApp {
       this.setupScrollProgressIndicator();
 
       console.log(`📖 Loading initial chapter: ${chapterToOpen}`);
-      this.showChapterLoadingOverlay();
       await this.goToChapter(chapterToOpen);
 
       this.isInitialized = true;
@@ -636,6 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.readingAppInstance.init().catch((error) => {
         console.error("App initialization failed:", error);
         window.readingAppInstance.showErrorState(error);
+        window.readingAppInstance.hideChapterLoadingOverlay();
       });
     }, 100);
   }
